@@ -17,6 +17,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/util-api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/util-util"/>
 	<classpathentry kind="var" path="MAVEN_REPO/servletapi/jars/servletapi-2.4.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/scheduler"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/jobscheduler"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
