@@ -2371,14 +2371,27 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
 		/**
 		 * @inheritDoc
 		 */
-		public int getCount() throws PermissionException
+		public int countMessages() throws PermissionException
 		{
 			List msgs = getMessages(null, true);
 			return msgs.size();
 		}
 
+        public int countMessages(String search)
+        {
+            try
+            {
+                List msgs = getPagedMessages(search, true, null);
+                return msgs.size();
+            }
+            catch (PermissionException e)
+            {
+                   return 0;
+            }
+		}
+        
 		/**
-         	 * Return a list of all or filtered messages in the channel limited to those inthe paging range. 
+         	 * Return a list of all or filtered messages in the channel limited to those in the paging range. 
          	 * 
          	 * @param filter
          	 *        A filtering object to accept messages, or null if no filtering is desired.
@@ -2402,6 +2415,8 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
 			unlock(SECURE_READ, getReference());
 			// track event
 			// m_eventTrackingService.post(m_eventTrackingService.newEvent(eventId(SECURE_READ), getReference(), false));
+
+System.out.println("Welcome to getPagedMessages from BaseMessageService"); 
 
 			List rv = findFilterMessages(null, ascending);
            		if (search != null)
@@ -3105,7 +3120,7 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
 			return m;
 
 		} // findMessage
-
+            
 		/**
 		 * Find all messages.
 		 * 
@@ -4437,7 +4452,7 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
 		 * Get the messages from a channel
 		 */
 		public List getMessages(MessageChannel channel);
-
+        
 		/**
 		 * Make and lock a new message.
 		 */
@@ -4447,7 +4462,17 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
 		 * Forget about a message.
 		 */
 		public void removeMessage(MessageChannel channel, MessageEdit edit);
-
+        
+        /**
+         * Count messages 
+         */ 
+        public int countMessages(MessageChannel channel);
+        
+        /**
+         * Count messages with a search string 
+         */
+        public int countMessages(MessageChannel channel, String search);
+        
 		/**
 		 * Get messages filtered by date and count and drafts, in descending (latest first) order
 		 * 
@@ -4462,7 +4487,37 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
 		 * @return A list of Message objects that meet the criteria; may be empty
 		 */
 		public List getMessages(MessageChannel channel, Time afterDate, int limitedToLatest, String draftsForId, boolean pubViewOnly);
+        
+		/**
+		 * Get messages filtered by date and count and drafts, in descending (latest first) order
+		 * 
+		 * @param afterDate
+		 *        if null, no date limit, else limited to only messages after this date.
+		 * @param limitedToLatest
+		 *        if 0, no count limit, else limited to only the latest this number of messages.
+		 * @param draftsForId
+		 *        how to handle drafts: null means no drafts, "*" means all, otherwise drafts only if created by this userId.
+		 * @param pubViewOnly
+		 *        if true, include only messages marked pubview, else include any.
+		 * @return A list of Message objects that meet the criteria; may be empty
+		 */
+		public List getMessages(MessageChannel channel, Time afterDate, int limitedToLatest, String draftsForId, boolean pubViewOnly, PagingPosition pager);
 
+        /**
+		 * Get messages filtered by date and count and drafts, in descending (latest first) order
+		 * 
+         * @param search
+		 *        if non-null string to search for
+		 * @param filter
+		 *        if null, no date limit, else limited to only messages after this date.
+		 * @param pager
+		 *        limit on the records returned
+		 * @param pubViewOnly
+		 *        if true, include only messages marked pubview, else include any.
+		 * @return A list of Message objects that meet the criteria; may be empty
+		 */
+        public List getMessages(MessageChannel channel, String search, boolean asc, PagingPosition pager);
+        
 		/**
 		 * Access a list of channel ids from channels with refs that start with (match) context.
 		 * 

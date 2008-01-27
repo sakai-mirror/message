@@ -102,8 +102,16 @@ public interface MessageChannel extends Entity
 	 * @return The count.
 	 */
 
-	int getCount() throws PermissionException;
+	int countMessages() throws PermissionException;
 
+    /**
+	 * Get the number of messages in this particular channel.
+	 *
+	 * @return The count.
+	 */
+
+	int countMessages(String search) throws PermissionException;
+    
 	/**
 	 * Return a list of all or filtered messages in the channel limited to those inthe paging range. 
 	 * 
