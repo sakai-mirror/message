@@ -1182,7 +1182,7 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
 
 		// get the messages
 		List msgs = ((BaseMessageChannelEdit) c).findFilterMessages(
-				new MessageSelectionFilter(afterDate, draftsForId, pubViewOnly), ascending);
+				new MessageSelectionFilter(null, afterDate, draftsForId, pubViewOnly), ascending);
 
 		// sub-select count
 		if ((limitedToLatest != 0) && (limitedToLatest < msgs.size()))
@@ -1625,7 +1625,7 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
 			stack.push(containerElement);
 
 			// do the messages in the channel
-			Iterator messages = channel.getMessages(null, true).iterator();
+			Iterator messages = channel.getMessages(null, true, null).iterator();
 			while (messages.hasNext())
 			{
 				Message msg = (Message) messages.next();
@@ -2371,85 +2371,73 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
 		/**
 		 * @inheritDoc
 		 */
-		public int getCount() throws PermissionException
+		public int countMessages() throws PermissionException
 		{
 			List msgs = getMessages(null, true);
 			return msgs.size();
 		}
 
 		/**
-         	 * Return a list of all or filtered messages in the channel limited to those inthe paging range. 
-         	 * 
-         	 * @param filter
-         	 *        A filtering object to accept messages, or null if no filtering is desired.
-         	 * @param ascending
-         	 *        Order of messages, ascending if true, descending if false
-         	 *        The order in which the messages will be found in the iteration is by date, oldest 
-         	 *        first if ascending is true, newest first if ascending is false.
-         	 * @param pages
-         	 *        An indication of the range of pages we are looking for
-         	 * @return a list of channel Message objects or specializations of Message objects (may be empty).
-         	 * @exception PermissionException
-         	 *            if the user does not have read permission to the channel.
+		 * @inheritDoc
+		 */
+		public int countMessagesSearch(String search) throws PermissionException
+		{
+			List msgs = getMessagesSearch(search, true, null);
+			return msgs.size();
+		}
+
+		/**
+		 * @inheritDoc
+		 */
+		public int countMessages(Filter filter) throws PermissionException
+		{
+			List msgs = getMessages(filter, true, null);
+			return msgs.size();
+		}
+        
+		/**
+		 * {@inheritDoc}
 		 *
 		 * Note: This is an inefficient memory-only implementation and should be overridden in the 
 		 * database implementations to use the database to do the data reductions.  This implementation
 		 * also only searches the body because it is handling messages.
 		 */
-		public List getPagedMessages(String search, boolean ascending, PagingPosition pages) throws PermissionException
+		public List getMessagesSearch(String search, boolean ascending, PagingPosition pages) throws PermissionException
+		{
+			// Make a search-only filter
+			Filter filter = new MessageSelectionFilter(search, null, null, false);
+
+			return getMessages(filter, ascending, pages);
+		} // getMessages
+
+		/**
+		 * {@inheritDoc}
+		 */
+		public List getMessages(Filter filter, boolean ascending, PagingPosition pages) throws PermissionException
 		{
 			// check security on the channel (throws if not permitted)
 			unlock(SECURE_READ, getReference());
 			// track event
 			// m_eventTrackingService.post(m_eventTrackingService.newEvent(eventId(SECURE_READ), getReference(), false));
 
-			List rv = findFilterMessages(null, ascending);
-           		if (search != null)
-                	{
-                        	Vector filtered = new Vector();
-                        	for (Iterator iMsgs = rv.iterator(); iMsgs.hasNext();)
-                        	{
-                                	Message msg = (Message) iMsgs.next();
-	
-					// When this is extended - it should probably search more fields
-                                	if (StringUtil.containsIgnoreCase(FormattedText.convertFormattedTextToPlaintext(msg.getBody()), search))
-                                	{
-                                        	filtered.add(msg);
-                                	}
-                        	}
-                        	rv = filtered;
-			}
-
-			// Trim down to the elements in the page rage
+			List rv = findFilterMessages(filter, ascending);
 			if ( pages != null ) 
 			{
                 		pages.validate(rv.size());
                 		rv = rv.subList(pages.getFirst() - 1, pages.getLast());
 			}
 			return rv;
-		} // getPagedMessages
+		} // getMessages
 
 		/**
-		 * Return a list of all or filtered messages in the channel. The order in which the messages will be found in the iteration is by date, oldest first if ascending is true, newest first if ascending is false.
-		 * 
-		 * @param filter
-		 *        A filtering object to accept messages, or null if no filtering is desired.
-		 * @param ascending
-		 *        Order of messages, ascending if true, descending if false
-		 * @return a list on channel Message objects or specializations of Message objects (may be empty).
-		 * @exception PermissionException
-		 *            if the user does not have read permission to the channel.
+		 * {@inheritDoc}
 		 */
+		// We do provide this convienence method because some have programmed to it
+		// TODO: Deprecate this
 		public List getMessages(Filter filter, boolean ascending) throws PermissionException
 		{
-			// check security on the channel (throws if not permitted)
-			unlock(SECURE_READ, getReference());
-			// track event
-			// m_eventTrackingService.post(m_eventTrackingService.newEvent(eventId(SECURE_READ), getReference(), false));
-
-			return findFilterMessages(filter, ascending);
-
-		} // getMessages
+			return getMessages(filter, ascending, null);
+		}
 
 		/**
 		 * Return a list of all public messages in the channel. 
@@ -2467,7 +2455,6 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
 			return findFilterMessages(new PublicFilter(filter), ascending);
 
 		} // getMessagesPublic
-
 
 		/**
 		 * Return a specific channel message, as specified by message name.
@@ -3105,7 +3092,7 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
 			return m;
 
 		} // findMessage
-
+            
 		/**
 		 * Find all messages.
 		 * 
@@ -4437,7 +4424,7 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
 		 * Get the messages from a channel
 		 */
 		public List getMessages(MessageChannel channel);
-
+        
 		/**
 		 * Make and lock a new message.
 		 */
@@ -4447,7 +4434,23 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
 		 * Forget about a message.
 		 */
 		public void removeMessage(MessageChannel channel, MessageEdit edit);
-
+        
+		/**
+		 * Count messages 
+		 *
+		// TODO: Fix it so this can go in the Storage interface in trunk
+		public int countMessages(MessageChannel channel);
+		 */ 
+        
+		/**
+		 * Count messages with a search string 
+		 *
+		// TODO: Fix it so this can go in the Storage interface in trunk
+		// I switched this to filter - it is to use Filter here as long as 
+		// we use the version of Filter which supports isSearchFilter()
+		public int countMessages(MessageChannel channel, Filter filter);
+		 */
+        
 		/**
 		 * Get messages filtered by date and count and drafts, in descending (latest first) order
 		 * 
@@ -4462,7 +4465,22 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
 		 * @return A list of Message objects that meet the criteria; may be empty
 		 */
 		public List getMessages(MessageChannel channel, Time afterDate, int limitedToLatest, String draftsForId, boolean pubViewOnly);
-
+        
+		/**
+		 * Get messages filtered, sorted, and paged
+		 * 
+		 * @param context
+		 *        The root channel ref to match.
+		 * @param filter
+		 *        filter the records according to this filter - may be null
+		 * @param pager
+		 *        limit on the records returned - may be null
+		 * @return A list of Message objects that meet the criteria; may be empty
+		// TODO:  Fix everyting in trunk so this can be added to the Storage interface
+                // Switch to filter after we add the isSearchFilter() in Filter
+		public List getMessages(MessageChannel channel, Filter filter, boolean asc, PagingPosition pager);
+		 */
+        
 		/**
 		 * Access a list of channel ids from channels with refs that start with (match) context.
 		 * 
@@ -4570,11 +4588,60 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
 
 		protected boolean m_pubViewOnly = false;
 
-		public MessageSelectionFilter(Time afterDate, String draftsForId, boolean pubViewOnly)
+		protected String m_search = null;
+
+		protected boolean m_isSearchFilter = false;
+
+		public MessageSelectionFilter(String search,Time afterDate, String draftsForId, boolean pubViewOnly)
 		{
+			m_search = search;
 			m_afterDate = afterDate;
 			m_draftsForId = draftsForId;
 			m_pubViewOnly = pubViewOnly;
+			m_isSearchFilter = (search != null) && ( afterDate == null ) 
+				&& (draftsForId == null) && ! pubViewOnly;
+		}
+
+		// TODO: Change the Filter interface to make these part of the interface
+		// These methods are here for the future use
+		/**
+		 * Is this filter a simple search-only filter?  When this is true, 
+		 * it permits the code using this filter to do searches which may
+		 * be imperfect and to sort by relevance instead of date or
+		 * something else.  If this method returns true - the calling
+		 * code may or not call accept() for every message - it may
+		 * completely handle the search retrieval separately.
+		 * 
+		 * If you want accept() to be called for each object return
+		 * false for this call.  The calling code *may* still take 
+		 * advantage of the search string below to reduce its result
+		 * set before calling accept().
+		 *
+		 * If you want this filter to be called on every object and
+		 * you do not want the calling code to do any optimization of
+		 * its result set, simply return false here and return 
+		 * null for getSearch() - this forces the calling code 
+		 * to retrieve all the Entities and call accept() on every
+		 * entity.
+		 *
+		 * @return true if this filter is *only* a search filter.
+		 */
+		public boolean isSearchFilter()
+		{
+			return m_isSearchFilter;
+		}
+
+		/**
+		 * Return the search string - may be null.  Note that a non-null
+		 * return from this does *not* imply that this is a search-only
+		 * filter - only the isSearchFilter() indicates that this is 
+		 * a search-only filter.
+		 *
+		 * @return The search string for this filter - may be null.
+		 */
+		public String getSearch()
+		{
+			return m_search;
 		}
 
 		/**
@@ -4604,6 +4671,14 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
 			if (m_pubViewOnly)
 			{
 				if (((Entity) o).getProperties().getProperty(ResourceProperties.PROP_PUBVIEW) == null)
+				{
+					return false;
+				}
+			}
+
+			if ( m_search != null ) 
+			{
+				if (!StringUtil.containsIgnoreCase(FormattedText.convertFormattedTextToPlaintext(((Message) o).getBody()), m_search))
 				{
 					return false;
 				}

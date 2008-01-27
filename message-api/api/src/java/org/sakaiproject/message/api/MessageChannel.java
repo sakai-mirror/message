@@ -101,11 +101,43 @@ public interface MessageChannel extends Entity
 	 *
 	 * @return The count.
 	 */
-
-	int getCount() throws PermissionException;
+	int countMessages() throws PermissionException;
 
 	/**
-	 * Return a list of all or filtered messages in the channel limited to those inthe paging range. 
+	 * Get the number of messages in this particular channel if the filter
+	 * were applied.
+	 *
+	 * @param filter
+	 *	A filtering object to accept messages, or null if no filtering is desired.
+	 *
+	 * @return The count.
+	 */
+	int countMessages(Filter filter) throws PermissionException;
+    
+	/**
+	 * Get the number of messages in this particular channel if the search
+	 * were applied.
+	 *
+	 * @param search
+	 *	A search string to be used to search the messages and return
+	 *	matching messages.
+	 *
+	 * @return The count.
+	 */
+	int countMessagesSearch(String search) throws PermissionException;
+    
+	/**
+	 * Return a list of all messages or messages which match a search in the channel limited to 
+	 * those in the paging range. A search is subtly different from a filter.  Depending on
+	 * implementation, a search might be optimized to use a LIKE clause in SQL or even consult 
+	 * a Lucene-like index to search messages.   A filter is a very precise mechanism
+	 * which retrieves and parses every message - presenting it to the filter and 
+	 * allowing the filter to decide if the message is to be included.  When searching,
+	 * ascending or descending order may not be message date - it might be relevance
+	 * depending on impementation.  It is also possible that some implementations will
+	 * simply treat search as a special case of filter and still retrieve all messages
+	 * and do the search on parsed messages.  Keeping these methods separate means that 
+	 * it is *possible* to separately optimize these operations separately.
 	 * 
 	 * @param search
 	 *        A search string which is to look in the textual areas of the messages.
@@ -114,15 +146,38 @@ public interface MessageChannel extends Entity
          *        The order in which the messages will be found in the iteration is by date, oldest 
          *        first if ascending is true, newest first if ascending is false.
 	 * @param pages
-	 *        An indication of the range of pages we are looking for
+	 *        An optional indication of the range of messages we are looking for.  May be null
+	 *        to indicate all pages.
 	 * @return a list of channel Message objects or specializations of Message objects (may be empty).
 	 * @exception PermissionException
 	 *            if the user does not have read permission to the channel.
 	 */
-	List getPagedMessages(String search, boolean ascending, PagingPosition pages) throws PermissionException;
+	List getMessagesSearch(String search, boolean ascending, PagingPosition pages) throws PermissionException;
 
 	/**
-	 * Return a list of all or filtered messages in the channel. The order in which the messages will be found in the iteration is by date, oldest first if ascending is true, newest first if ascending is false.
+	 * Return a list of all or filtered messages in the channel. The order in which the 
+	 * messages will be found in the iteration is by date, oldest first if 
+	 * ascending is true, newest first if ascending is false.  See getMessagesSearch()
+	 * for detail on the possible differences between search and filter retrievals.
+	 * 
+	 * @param filter
+	 *        A filtering object to accept messages, or null if no filtering is desired.
+	 * @param ascending
+	 *        Order of messages, ascending if true, descending if false
+	 * @param pages
+	 *        An indication of the range of messages we are looking for
+	 * @return a list of channel Message objects or specializations of Message objects (may be empty).
+	 * @exception PermissionException
+	 *            if the user does not have read permission to the channel.
+	 */
+	List getMessages(Filter filter, boolean ascending, PagingPosition pages) throws PermissionException;
+
+	/**
+	 * Return a list of all or filtered messages in the channel. The order in which the 
+	 * messages will be found in the iteration is by date, oldest first if 
+	 * ascending is true, newest first if ascending is false.  This method may be costly
+	 * to use when there are many messages returned in the list.  In situations where the 
+	 * number of messages returned may be large, paging should be used.
 	 * 
 	 * @param filter
 	 *        A filtering object to accept messages, or null if no filtering is desired.
@@ -138,6 +193,8 @@ public interface MessageChannel extends Entity
 	 * Return a list of all public messages in the channel. 
 	 * The order in which the messages will be found in the iteration is by date, 
 	 * oldest first if ascending is true, newest first if ascending is false.
+	 * This method may be costly to use when there are many messages 
+	 * returned in the list.  
 	 * 
 	 * @param filter
 	 *        Optional additional filtering object to accept messages, or null
