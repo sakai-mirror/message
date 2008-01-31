@@ -135,7 +135,7 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
 	private static final String SCHED_INV_UUID = "schInvUuid";
 //	private static final String SCHINV_DELETE_EVENT = "schInv.delete";
 	
-
+    
 	/**
 	 * Access this service from the inner classes.
 	 */
@@ -2155,6 +2155,32 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
 	 * MessageChannel implementation
 	 *********************************************************************************************************************************************************************************************************************************************************/
 
+    // TODO: Remove these horrible hacks once we change the Storage API  
+    // These do nothing unless they are overridden in the derived class
+    // In this case it is DbMailArchiveService.java
+    public int countMessagesService(BaseMessageChannelEdit chan) throws PermissionException
+	{
+			System.out.println("countMessagesService");
+            return -1;
+	}
+
+		/**
+		 * @inheritDoc
+		 */
+	public int countMessagesSearchService(BaseMessageChannelEdit chan, String search) throws PermissionException
+	{
+			System.out.println("countMessagesServiceSearch search="+search);
+            return -1;
+	}
+    
+    public List getMessagesSearchService(BaseMessageChannelEdit chan, String search, boolean ascending, PagingPosition pages)
+        throws PermissionException
+	{
+			System.out.println("getMessagesServiceSearch search="+search);
+            return null;
+	}
+    // TODO: End temporary workwround ot make this backwards compatible
+
 	public class BaseMessageChannelEdit extends Observable implements MessageChannelEdit, SessionBindingListener
 	{
 		/** The context in which this channel exists. */
@@ -2368,11 +2394,17 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
 			return getGroupsAllowFunction(SECURE_READ);
 		}
 
+        // TODO:  When Storage is extended - Make sure to call the storage
+        // methods for counting here instead of getting all messages
+        // Otherwise we have to override these all the time in the DB versions
+        // just to get them talking to Storage properly. -- Chuck
 		/**
 		 * @inheritDoc
 		 */
 		public int countMessages() throws PermissionException
 		{
+            int cm = countMessagesService(this);
+            if ( cm >= 0 ) return cm;
 			List msgs = getMessages(null, true);
 			return msgs.size();
 		}
@@ -2382,6 +2414,8 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
 		 */
 		public int countMessagesSearch(String search) throws PermissionException
 		{
+            int cm = countMessagesSearchService(this, search);
+            if ( cm >= 0 ) return cm;
 			List msgs = getMessagesSearch(search, true, null);
 			return msgs.size();
 		}
@@ -2404,6 +2438,10 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
 		 */
 		public List getMessagesSearch(String search, boolean ascending, PagingPosition pages) throws PermissionException
 		{
+            // TODO: Remove this backwards-compatibility hack when we can change the Storage API
+            List rv1 = getMessagesSearchService(this, search, ascending, pages);
+            if ( rv1 == null ) return rv1;
+            
 			// Make a search-only filter
 			Filter filter = new MessageSelectionFilter(search, null, null, false);
 
