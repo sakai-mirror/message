@@ -2440,7 +2440,7 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
 		{
             // TODO: Remove this backwards-compatibility hack when we can change the Storage API
             List rv1 = getMessagesSearchService(this, search, ascending, pages);
-            if ( rv1 == null ) return rv1;
+            if ( rv1 != null ) return rv1;
             
 			// Make a search-only filter
 			Filter filter = new MessageSelectionFilter(search, null, null, false);
