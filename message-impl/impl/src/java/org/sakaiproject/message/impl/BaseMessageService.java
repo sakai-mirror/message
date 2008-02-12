@@ -4805,7 +4805,16 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
     	{
 			return channelReference(
 					siteId, SiteService.MAIN_CONTAINER);
+
     	}
+
+	// back port 2.4
+    	public String getSummarizableReference(String siteId)
+    	{
+			return channelReference(
+					siteId, SiteService.MAIN_CONTAINER);
+    	}
+	// back port 2.4
 
 
 	/**
