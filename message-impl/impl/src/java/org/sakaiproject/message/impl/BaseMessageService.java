@@ -2165,7 +2165,6 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
     // In this case it is DbMailArchiveService.java
     public int countMessagesService(BaseMessageChannelEdit chan) throws PermissionException
 	{
-			System.out.println("countMessagesService");
             return -1;
 	}
 
@@ -2174,14 +2173,12 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
 		 */
 	public int countMessagesSearchService(BaseMessageChannelEdit chan, String search) throws PermissionException
 	{
-			System.out.println("countMessagesServiceSearch search="+search);
             return -1;
 	}
     
     public List getMessagesSearchService(BaseMessageChannelEdit chan, String search, boolean ascending, PagingPosition pages)
         throws PermissionException
 	{
-			System.out.println("getMessagesServiceSearch search="+search);
             return null;
 	}
     // TODO: End temporary workwround ot make this backwards compatible
