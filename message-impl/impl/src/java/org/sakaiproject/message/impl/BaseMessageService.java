@@ -2285,7 +2285,7 @@ public abstract class BaseMessageService implements MessageService, StorageUser,
 
 		} // setRemoved
 
-		private void startNotifyThread(Event event) {
+		public void startNotifyThread(Event event) {
 			try
 			{
 				NotifyThread n = new NotifyThread(event);
