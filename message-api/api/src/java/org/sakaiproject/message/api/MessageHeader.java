@@ -88,9 +88,9 @@ public interface MessageHeader extends AttachmentContainer
 	Time getDate();
 	
 	/**
-	 * Access the date/time the message was sent to the channel.
+	 * Access the message order of the message was sent to the channel.
 	 * 
-	 * @return The date/time the message was sent to the channel.
+	 * @return The message order of the message was sent to the channel.
 	 */
 	Integer getMessage_order();
 
